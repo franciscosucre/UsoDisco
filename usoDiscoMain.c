@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	char* cwd;							// Apuntador utilizado para obtener el directorio actual
 
 	nivelConcurrencia = 1;
-	strcpy(archivoSalida,"");
+	strcpy(archivoSalida,"None");
 	cwd = getcwd(directorio, sizeof(directorio));
 	if ((cwd) != NULL)
 	{
