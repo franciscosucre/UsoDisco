@@ -18,6 +18,7 @@ extern const char *mkfifoError;
 extern const char *selectError;
 extern const char *openError;
 extern const char *getcwdError;
+extern const char *mallocError;
 extern const char *rvError;
 extern const char *argNumError;
 extern const char *argOrdError;

@@ -25,6 +25,7 @@ const char *mkfifoError = "mkfifo Error";
 const char *selectError = "select Error";
 const char *openError = "open Error";
 const char *getcwdError = "getcwd() Error";
+const char *mallocError = "malloc Error";
 const char *argNumError = "Numero Incorrecto de Argumentos";
 const char *argOrdError = "Orden Incorrecto de Argumentos";
 const char *invOrdError = "Argumentos Invalidos";
@@ -42,7 +43,9 @@ const char *defaultStatus = "Sin Status";
 const char *defaultServer = "/tmp/servidor";
 const char *defaultUsername = "System";
 const char *loginResultMessage = "Resultado Del Inicio De Sesion:";
-const char *helpMenu = "Sintaxis\n"
+const char *helpMenu = "\n"
+		"Sintaxis\n"
+		"\n"
 		"UsoDisco [-h] | [-n i] [-d directorio] [-o salida ]\n"
 		"\n"
 		"-h: muestra por pantalla un mensaje de ayuda (sintaxis, descripción de parámetros, etc.) "
@@ -52,7 +55,8 @@ const char *helpMenu = "Sintaxis\n"
 		"-d directorio: especifica un directorio desde donde calcula el espacio utilizado. "
 		"Por defecto hace el cálculo desde el directorio actual\n"
 		"-o salida: archivo que contendrá la salida con la lista de directorios y el espacio en "
-		"bloques ocupado por los archivos regulares. El valor por defecto es la salida estándar";
+		"bloques ocupado por los archivos regulares. El valor por defecto es la salida estándar\n"
+		"\n";
 
 // Ordenes Cliente->Servidor
 
@@ -70,6 +74,22 @@ const char *successMessage = "Operacion Exitosa";
 const char *userNotFoundMessage = "El usuario al que quiere escribirle no se encuentra conectado";
 const char *userNameNotAvaible = "El nombre de usuario no se encuentra disponible, por favor escoja otro";
 
+/*
+ * Function:  errorAndExit
+ * --------------------
+ *  Imprime un error y sale del programa.
+ *
+ *	errorMessage: el mensaje de error a utilizar
+ *
+ *  returns: void
+ */
+void errorAndExit(const char* errorMessage)
+
+{
+	perror(errorMessage);
+	exit(0);
+}
+
 char* getErrorMessage(const char* errorMessage,int line, char* file)
 
 {
@@ -77,6 +97,10 @@ char* getErrorMessage(const char* errorMessage,int line, char* file)
 
 	char* lineString;
 	lineString = (char *) malloc(sizeof(line));
+	if (lineString == NULL)
+	{
+		errorAndExit(mallocError);
+	}
 	sprintf(lineString, "%d", line);
 
 	// Inicializamos la variable en la que devolveremos el error
@@ -84,6 +108,10 @@ char* getErrorMessage(const char* errorMessage,int line, char* file)
 	char* finalMessage;
 	finalMessage = (char *) malloc(strlen(errorMessage) + strlen(" at line ")
 			+ strlen(lineString) + strlen(" in file ") + strlen(file));
+	if (finalMessage == NULL)
+	{
+		errorAndExit(mallocError);
+	}
 
 	// Iniciamos el mensaje con el error
 
@@ -105,21 +133,7 @@ char* getErrorMessage(const char* errorMessage,int line, char* file)
 
 }
 
-/*
- * Function:  errorAndExit
- * --------------------
- *  Imprime un error y sale del programa.
- *
- *	errorMessage: el mensaje de error a utilizar
- *
- *  returns: void
- */
-void errorAndExit(const char* errorMessage)
 
-{
-	perror(errorMessage);
-	exit(0);
-}
 
 // Separa un string con el delimitador seleccionado y devuelve la palabra seleccionada con index
 char* getWord(char* string,char* delimeter,int index)
