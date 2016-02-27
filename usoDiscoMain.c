@@ -199,35 +199,19 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+/*
+ * Function:  funcHilo
+ * --------------------
+ *  Funcion que ejecturan los hilos
+ *
+ *  threadarg: Informacion necesaria para que el hilo creado pueda completar la funcion
+ *
+ *  returns: void
+ */
 void *funcHilo(void *threadarg)
 {
-    int status;
-    struct thread_data *my_data;
-    struct stat st_buf;
-
-    my_data = (struct thread_data *) threadarg;
-
-    // Get the status of the file system object.
-
-    status = stat (my_data->directory, &st_buf);
-    if (status != 0)
-    {
-        printf ("Error");
-        pthread_exit(NULL);
-    }
-
-    // Tell us what it is then exit.
-
-    if (S_ISREG (st_buf.st_mode))
-    {
-        printf ("%s is a regular file.\n", my_data->directory);
-    }
-    else if (S_ISDIR (st_buf.st_mode))
-    {
-        printf ("%s is a directory.\n", my_data->directory);
-    }
-
-    pthread_exit(NULL);
+	printf("\n");
+	return 0;
 }
 
 /*
