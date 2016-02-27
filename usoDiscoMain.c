@@ -10,21 +10,43 @@
 #include <string.h>             // strlen
 #include <stdio.h>              // printf
 #include <stdlib.h>				// exit
+#include <pthread.h>			// Hilos
+#include <dirent.h>				// dirent
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define MSG_LEN 500             // NOTA: VER EN CUANTO SE DEJARA ESTE ARREGLO
 #define NAME_LEN 50
+#define MAXDIR 40
 #define DEFAULT_CONCURRENCY 1
 #define DEFAULT_FILE "None"
 
+struct thread_data
+{
+   int  thread_id;
+   int  size;
+   char directory[MSG_LEN];
+};
+
 int main(int argc, char *argv[])
 {
-	char directorio[MSG_LEN];			// Directorio a analizar
-	char archivoSalida[MSG_LEN];		// Archivo de salida
-	int nivelConcurrencia;				// Numero de hilos a crear
-	int i;								// Iterador
-	char* cwd;							// Apuntador utilizado para obtener el directorio actual
-	int salidaSwith,levelSwith,			// Variables booleanas que indican si ya se dio un argumento
+	char directorioInicial[MSG_LEN];		// Directorio a analizar
+	char archivoSalidaNombre[MSG_LEN];		// Nombre del Archivo de salida
+	FILE * archivoSalida;					// Archivo de salida
+	int nivelConcurrencia;					// Numero de hilos a crear
+	int i;									// Iterador
+	char* cwd;								// Apuntador utilizado para obtener el directorio actual
+	int salidaSwith,levelSwith,				// Variables booleanas que indican si ya se dio un argumento
 	dirSwith;
+	int rc;									//
+	void *status;							//
+	int numDirectorios;						// Numero actual de subdirectorios
+	char listaDirectorios[MAXDIR][MSG_LEN]; // Lista de directorios a analizar
+	DIR* directorioTemp;					// Variable para almacenar directorios
+	struct dirent *dp;						// Estructura utiliada para seleccionar los ficheros al
+											// recorrer
+	struct stat bufferDeArchivo;			// Estructura utilizada para guardar la informacion
+											// de los ficheros o directorios
 
 	salidaSwith = 0;
 	levelSwith = 0;
@@ -32,13 +54,14 @@ int main(int argc, char *argv[])
 
 	/* Se asignan los valores por defectos */
 	nivelConcurrencia = DEFAULT_CONCURRENCY;
-	strcpy(archivoSalida,DEFAULT_FILE);
+	strcpy(archivoSalidaNombre,DEFAULT_FILE);
+	archivoSalida = NULL;
 
 	/* Obtenemos el directorio Actual */
-	cwd = getcwd(directorio, sizeof(directorio));
+	cwd = getcwd(directorioInicial, sizeof(directorioInicial));
 	if ((cwd) != NULL)
 	{
-		fprintf(stdout, "Directorio Actual: %s\n", directorio);
+		fprintf(stdout, "Directorio Actual: %s\n", directorioInicial);
 	}
 	else
 	{
@@ -77,13 +100,14 @@ int main(int argc, char *argv[])
         	/* Caso 2.2: Se recibio el argumento del numero de concurrencia */
         	else if ((strcmp(argv[i],"-d")) == 0 && dirSwith == 0)
 			{
-        		strcpy(directorio,argv[i + 1]);
+        		strcpy(directorioInicial,argv[i + 1]);
         		dirSwith = 1;
 			}
         	/* Caso 2.3: Se recibio el argumento del numero de concurrencia */
         	else if ((strcmp(argv[i],"-o")) == 0 && salidaSwith == 0)
 			{
-        		strcpy(archivoSalida,argv[i + 1]);
+        		strcpy(archivoSalidaNombre,argv[i + 1]);
+        		archivoSalida = fopen (archivoSalidaNombre, "w+");
         		salidaSwith = 1;
 			}
         	/* Caso 2.4: Se recibieron argumentos en un formato invalido */
@@ -103,10 +127,134 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
+	/*
+	pthread_t hilos[nivelConcurrencia];
+	struct thread_data thread_data_array[nivelConcurrencia];
+*/
+
+
+	/* Creacion De Hilos */
+
+	/* A esto hay que
+	 *
+	for(i=0; i<nivelConcurrencia; i++)
+	{
+	   thread_data_array[i].thread_id = i;
+	   thread_data_array[i].directory = "";
+	   rc = pthread_create(&hilos[i], NULL, funcHilo, (void *) &thread_data_array[i]);
+	}
+	*/
+
+
+
+	directorioTemp = opendir(directorioInicial);
+	if (directorioTemp == NULL)
+	{
+		perror("opendir");
+		exit(-1);
+	}
+
+	/* Recorremos los archivos del directorio original */
+	while ((dp = readdir(directorioTemp)) != NULL)
+	{
+		stat(dp->d_name, &bufferDeArchivo);
+
+		/* Caso 1: El archivo es un directorio */
+		if (S_ISDIR(bufferDeArchivo.st_mode))
+		{
+			printToOutput(archivoSalida,"directorio: %s\n",dp->d_name);
+		}
+		/* Caso 2: El archivo es un fichero */
+		else
+		{
+			printToOutput(archivoSalida,"directorio: %s\n",dp->d_name);
+		}
+	}
+
+
+	/* Retorno De Hilos */
+	/*
+	for(i=0; i<nivelConcurrencia; i++)
+	{
+	   rc = pthread_join(hilos[i], &status);
+	   if (rc)
+	   {
+		  printf("ERROR; return code from pthread_join() is %d\n", rc);
+		  exit(­1);
+	   }
+	printf("Main: completed join with thread %ld having a status of %ld\n",i,(long)status);
+	}
+	*/
+
 	printf("\n");
 	printf("nivelConcurrencia = %d\n",nivelConcurrencia);
-	printf("directorio = %s\n",directorio);
-	printf("archivoSalida = %s\n",archivoSalida);
+	printf("directorio = %s\n",directorioInicial);
+	printf("archivoSalidaNombre = %s\n",archivoSalidaNombre);
 
+	if (archivoSalida != NULL)
+	{
+		fclose(archivoSalida);
+	}
+	close(directorioTemp);
 	return 0;
+}
+
+void *funcHilo(void *threadarg)
+{
+    int status;
+    struct thread_data *my_data;
+    struct stat st_buf;
+
+    my_data = (struct thread_data *) threadarg;
+
+    // Get the status of the file system object.
+
+    status = stat (my_data->directory, &st_buf);
+    if (status != 0)
+    {
+        printf ("Error");
+        pthread_exit(NULL);
+    }
+
+    // Tell us what it is then exit.
+
+    if (S_ISREG (st_buf.st_mode))
+    {
+        printf ("%s is a regular file.\n", my_data->directory);
+    }
+    else if (S_ISDIR (st_buf.st_mode))
+    {
+        printf ("%s is a directory.\n", my_data->directory);
+    }
+
+    pthread_exit(NULL);
+}
+
+/*
+ * Function:  printToOutput
+ * --------------------
+ *  Funcion que imprime UN string con un patron a la salida seleccionada
+ *
+ *  output: Apuntador al archivo seleccionado como salida del programa principal, este
+ *  puede venir en NULL lo cual significa que la persona no especifico ningun archivo
+ *  de salida
+ *
+ *  pattern: patron con el cual se escribira string
+ *
+ *  messageToPrint: String a imprimir
+ *
+ *  returns: void
+ */
+void printToOutput(FILE * output,char pattern[MSG_LEN],char messageToPrint[MSG_LEN])
+{
+	/* Caso 1: No hay archivo de salida seleccionado */
+	if (output == NULL)
+	{
+		printf(pattern,messageToPrint);
+	}
+	/* Caso 2: Si hay archivo de salida seleccionado*/
+	else
+	{
+		fprintf(output,pattern,messageToPrint);
+	}
 }
