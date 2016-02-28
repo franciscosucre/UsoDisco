@@ -28,11 +28,15 @@ struct thread_data
    char directory[MSG_LEN];
 };
 
+FILE * archivoSalida;					// Archivo de salida
+int numDirectorios;						// Numero de directorios en la lista
+int dirAnalizar;						// Indice del directorio a analizar
+char listaDirectorios[MAXDIR][MSG_LEN]; // Lista de directorios a analizar
+
 int main(int argc, char *argv[])
 {
 	char directorioInicial[MSG_LEN];		// Directorio a analizar
 	char archivoSalidaNombre[MSG_LEN];		// Nombre del Archivo de salida
-	FILE * archivoSalida;					// Archivo de salida
 	int nivelConcurrencia;					// Numero de hilos a crear
 	int i;									// Iterador
 	char* cwd;								// Apuntador utilizado para obtener el directorio actual
@@ -40,13 +44,14 @@ int main(int argc, char *argv[])
 	dirSwith;
 	int rc;									//
 	void *status;							//
-	int numDirectorios;						// Numero actual de subdirectorios
-	char listaDirectorios[MAXDIR][MSG_LEN]; // Lista de directorios a analizar
 	DIR* directorioTemp;					// Variable para almacenar directorios
 	struct dirent *dp;						// Estructura utiliada para seleccionar los ficheros al
 											// recorrer
 	struct stat bufferDeArchivo;			// Estructura utilizada para guardar la informacion
 											// de los ficheros o directorios
+	int exists;								// Variable que indica si un directorio existe
+	int bloquesTotal;						// Numero de bloques en total
+
 
 	salidaSwith = 0;
 	levelSwith = 0;
@@ -56,17 +61,7 @@ int main(int argc, char *argv[])
 	nivelConcurrencia = DEFAULT_CONCURRENCY;
 	strcpy(archivoSalidaNombre,DEFAULT_FILE);
 	archivoSalida = NULL;
-
-	/* Obtenemos el directorio Actual */
-	cwd = getcwd(directorioInicial, sizeof(directorioInicial));
-	if ((cwd) != NULL)
-	{
-		fprintf(stdout, "Directorio Actual: %s\n", directorioInicial);
-	}
-	else
-	{
-		errorAndExit(getErrorMessage(getcwdError,__LINE__, __FILE__));
-	}
+	strcpy(directorioInicial,".");
 
 	/* Caso 1: Se recibio 1 solo argumento */
 	if (argc == 2)
@@ -145,31 +140,11 @@ int main(int argc, char *argv[])
 	}
 	*/
 
+	bloquesTotal = 0;
+	dirAnalizar = 0;
+	strcpy(listaDirectorios[dirAnalizar],directorioInicial);
+	numDirectorios = 1;
 
-
-	directorioTemp = opendir(directorioInicial);
-	if (directorioTemp == NULL)
-	{
-		perror("opendir");
-		exit(-1);
-	}
-
-	/* Recorremos los archivos del directorio original */
-	while ((dp = readdir(directorioTemp)) != NULL)
-	{
-		stat(dp->d_name, &bufferDeArchivo);
-
-		/* Caso 1: El archivo es un directorio */
-		if (S_ISDIR(bufferDeArchivo.st_mode))
-		{
-			printToOutput(archivoSalida,"directorio: %s\n",dp->d_name);
-		}
-		/* Caso 2: El archivo es un fichero */
-		else
-		{
-			printToOutput(archivoSalida,"directorio: %s\n",dp->d_name);
-		}
-	}
 
 
 	/* Retorno De Hilos */
@@ -195,7 +170,7 @@ int main(int argc, char *argv[])
 	{
 		fclose(archivoSalida);
 	}
-	close(directorioTemp);
+	closedir(directorioTemp);
 	return 0;
 }
 
@@ -210,8 +185,52 @@ int main(int argc, char *argv[])
  */
 void *funcHilo(void *threadarg)
 {
-	printf("\n");
-	return 0;
+//	struct thread_data
+//	{
+//	   int  thread_id;
+//	   int  size;
+//	   char directory[MSG_LEN];
+//	};
+	struct thread_data *dataHilo;
+	DIR* directorioTemp;					// Variable para almacenar directorios
+	struct dirent *dp;						// Estructura utiliada para seleccionar los ficheros al
+											// recorrer
+	struct stat bufferDeArchivo;			// Estructura utilizada para guardar la informacion
+											// de los ficheros o directorios
+	int exists;								// Variable que indica si un directorio existe
+	char directorioNuevo[MSG_LEN];					// Variable para formar un nuevo directorio
+
+	dataHilo = (struct thread_data *) threadarg;
+
+	directorioTemp = opendir(dataHilo->directory );
+
+	if (directorioTemp == NULL)
+	{
+		perror("opendir");
+		exit(-1);
+	}
+
+	for (dp = readdir(directorioTemp); dp != NULL; dp = readdir(directorioTemp))
+	{
+		exists = stat(dp->d_name, &bufferDeArchivo);
+		if (exists < 0)
+		{
+			fprintf(stderr, "%s not found\n", dp->d_name);
+		}
+		else
+		{
+			if (S_ISDIR(bufferDeArchivo.st_mode))
+			{
+				printToOutput(archivoSalida,"Directorio: %s\n", dp->d_name);
+				fprintf(listaDirectorios[numDirectorios],"%s/%s",dataHilo->directory,dp->d_name);
+			}
+			else
+			{
+				printToOutput(archivoSalida,"Fichero: %s ", dp->d_name);
+				printToOutput(archivoSalida,"Numero De Bloques: %ld\n", bufferDeArchivo.st_blocks);
+			}
+		}
+	}
 }
 
 /*
