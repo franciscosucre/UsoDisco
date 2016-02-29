@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	/* Se asignan los valores por defectos */
 	nivelConcurrencia = DEFAULT_CONCURRENCY;
 	strcpy(archivoSalidaNombre,DEFAULT_FILE);
-	archivoSalida = NULL;
+	archivoSalida = stdout;
 	strcpy(directorioInicial,".");
 
 	/* Caso 1: Se recibio 1 solo argumento */
@@ -221,43 +221,14 @@ void *funcHilo(void *threadarg)
 		{
 			if (S_ISDIR(bufferDeArchivo.st_mode))
 			{
-				printToOutput(archivoSalida,"Directorio: %s\n", dp->d_name);
+				fprintf(archivoSalida,"Directorio: %s\n", dp->d_name);
 				fprintf(listaDirectorios[numDirectorios],"%s/%s",dataHilo->directory,dp->d_name);
 			}
 			else
 			{
-				printToOutput(archivoSalida,"Fichero: %s ", dp->d_name);
-				printToOutput(archivoSalida,"Numero De Bloques: %ld\n", bufferDeArchivo.st_blocks);
+				fprintf(archivoSalida,"Fichero: %s Numero De Bloques: %ld\n", dp->d_name,bufferDeArchivo.st_blocks);
 			}
 		}
 	}
 }
 
-/*
- * Function:  printToOutput
- * --------------------
- *  Funcion que imprime UN string con un patron a la salida seleccionada
- *
- *  output: Apuntador al archivo seleccionado como salida del programa principal, este
- *  puede venir en NULL lo cual significa que la persona no especifico ningun archivo
- *  de salida
- *
- *  pattern: patron con el cual se escribira string
- *
- *  messageToPrint: String a imprimir
- *
- *  returns: void
- */
-void printToOutput(FILE * output,char pattern[MSG_LEN],char messageToPrint[MSG_LEN])
-{
-	/* Caso 1: No hay archivo de salida seleccionado */
-	if (output == NULL)
-	{
-		printf(pattern,messageToPrint);
-	}
-	/* Caso 2: Si hay archivo de salida seleccionado*/
-	else
-	{
-		fprintf(output,pattern,messageToPrint);
-	}
-}
