@@ -12,6 +12,7 @@
 #include <stdlib.h>				// exit
 #include <pthread.h>			// Hilos
 #include <dirent.h>				// dirent
+#include <semaphore.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -32,6 +33,10 @@ FILE * archivoSalida;					// Archivo de salida
 int numDirectorios;						// Numero de directorios en la lista
 int dirAnalizar;						// Indice del directorio a analizar
 char listaDirectorios[MAXDIR][MSG_LEN]; // Lista de directorios a analizar
+pthread_mutex_t numTotalBlocksLock;
+int numTotalBlocks;
+
+void *funcHilo(void *threadarg);
 
 int main(int argc, char *argv[])
 {
@@ -51,6 +56,8 @@ int main(int argc, char *argv[])
 											// de los ficheros o directorios
 	int exists;								// Variable que indica si un directorio existe
 	int bloquesTotal;						// Numero de bloques en total
+	struct thread_data threads[MAXDIR];		//
+	pthread_t hilos[MAXDIR];
 
 
 	salidaSwith = 0;
@@ -145,8 +152,6 @@ int main(int argc, char *argv[])
 	strcpy(listaDirectorios[dirAnalizar],directorioInicial);
 	numDirectorios = 1;
 
-
-
 	/* Retorno De Hilos */
 	/*
 	for(i=0; i<nivelConcurrencia; i++)
@@ -223,12 +228,18 @@ void *funcHilo(void *threadarg)
 			{
 				fprintf(archivoSalida,"Directorio: %s\n", dp->d_name);
 				fprintf(listaDirectorios[numDirectorios],"%s/%s",dataHilo->directory,dp->d_name);
+				numDirectorios += 1;
 			}
 			else
 			{
 				fprintf(archivoSalida,"Fichero: %s Numero De Bloques: %ld\n", dp->d_name,bufferDeArchivo.st_blocks);
+				pthread_mutex_lock(&numTotalBlocksLock);
+				numTotalBlocks += bufferDeArchivo.st_blocks;
+				pthread_mutex_unlock(&numTotalBlocksLock);
 			}
 		}
 	}
+
+	return numTotalBlocks;
 }
 
