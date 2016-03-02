@@ -26,6 +26,7 @@ const char *selectError = "select Error";
 const char *openError = "open Error";
 const char *getcwdError = "getcwd() Error";
 const char *mallocError = "malloc Error";
+const char *dirNotExistsError = "El Directorio deseado no existe";
 const char *argNumError = "Numero Incorrecto de Argumentos";
 const char *argOrdError = "Orden Incorrecto de Argumentos";
 const char *invOrdError = "Argumentos Invalidos";

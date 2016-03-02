@@ -20,7 +20,7 @@
 #define NAME_LEN 50
 #define MAXDIR 40
 #define DEFAULT_CONCURRENCY 1
-#define DEFAULT_FILE "None"
+#define DEFAULT_FILE "stdout"
 
 struct thread_data
 {
@@ -76,13 +76,13 @@ int main(int argc, char *argv[])
 		/* Caso 1.1: Se recibio el argumento correcto */
 		if ((strcmp(argv[1],"-h")) == 0)
 		{
-			printf("%s", helpMenu);
+			printf("%s\n", helpMenu);
 			exit(0);
 		}
 		/* Caso 1.2: Se recibio el argumento incorrecto */
 		else
 		{
-			printf("%s", invOrdError);
+			printf("%s\n", invOrdError);
 			exit(0);
 		}
 	}
@@ -103,6 +103,13 @@ int main(int argc, char *argv[])
         	else if ((strcmp(argv[i],"-d")) == 0 && dirSwith == 0)
 			{
         		strcpy(directorioInicial,argv[i + 1]);
+				directorioTemp = opendir(directorioInicial);
+
+				if (directorioTemp == NULL)
+				{
+					printf("%s\n",dirNotExistsError);
+					exit(-1);
+				}
         		dirSwith = 1;
 			}
         	/* Caso 2.3: Se recibio el argumento del numero de concurrencia */
@@ -115,7 +122,7 @@ int main(int argc, char *argv[])
         	/* Caso 2.4: Se recibieron argumentos en un formato invalido */
     		else
     		{
-    			printf("%s", invOrdError);
+    			printf("%s\n", invOrdError);
     			exit(0);
     		}
         }

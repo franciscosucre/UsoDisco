@@ -21,6 +21,7 @@ extern const char *getcwdError;
 extern const char *mallocError;
 extern const char *rvError;
 extern const char *argNumError;
+extern const char *dirNotExistsError;
 extern const char *argOrdError;
 extern const char *invOrdError;
 extern const char *termSizeError;
