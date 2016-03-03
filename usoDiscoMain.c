@@ -6,6 +6,8 @@
  */
 
 #include "messages.h"         	// Mensajes De Error y funciones comunes
+#include "directoryStack.h"     // Pila de directorios
+#include "pthreadQueue.h"       // Cola de hilos
 #include <unistd.h>				// getcwd
 #include <string.h>             // strlen
 #include <stdio.h>              // printf
