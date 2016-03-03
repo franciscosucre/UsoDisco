@@ -46,7 +46,6 @@ void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN])
 	char directoryToReturn[MSG_LEN];
 
 	lastPosition = stackSize(stack);
-	printf("directorioNuevo = %s\n", directorioNuevo);
 
 	strcpy(stack->listaDirectorios[lastPosition],directorioNuevo);
 

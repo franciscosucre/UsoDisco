@@ -163,9 +163,9 @@ int main(int argc, char *argv[])
 		popFromStack(&pilaDirectorios,thread_data.directory);
 		printf("thread_data.directory = %s\n",thread_data.directory);
 		rc = pthread_create(&hilos[0], NULL, funcHilo, (void *) &thread_data);
+		rc = pthread_join(hilos[0], &status);
 	}
 
-	rc = pthread_join(hilos[0], &status);
 
 	/* Creacion De Hilos */
 
@@ -217,64 +217,6 @@ int main(int argc, char *argv[])
  *
  *  returns: void
  */
-void *inicializarHilo(void *threadarg)
-{
-	struct thread_data *dataHilo;
-	DIR* directorioTemp;					// Variable para almacenar directorios
-	struct dirent *dp;						// Estructura utiliada para seleccionar los ficheros al
-											// recorrer
-	struct stat bufferDeArchivo;			// Estructura utilizada para guardar la informacion
-											// de los ficheros o directorios
-	int exists;								// Variable que indica si un directorio existe
-	char directorioNuevo[MSG_LEN];					// Variable para formar un nuevo directorio
-
-	dataHilo = (struct thread_data *) threadarg;
-
-	directorioTemp = opendir(dataHilo->directory );
-
-	if (directorioTemp == NULL)
-	{
-		perror("opendir\n");
-		exit(-1);
-	}
-
-	for (dp = readdir(directorioTemp); dp != NULL; dp = readdir(directorioTemp))
-	{
-		exists = stat(dp->d_name, &bufferDeArchivo);
-		if (exists < 0)
-		{
-			fprintf(stderr, "%s not found\n", dp->d_name);
-		}
-		else
-		{
-			if (S_ISDIR(bufferDeArchivo.st_mode))
-			{
-				fprintf(archivoSalida,"Directorio: %s\n", dp->d_name);
-				fprintf(archivoSalida,"Directorio: %s/%s\n",dataHilo->directory,dp->d_name);
-				numDirectorios += 1;
-			}
-			else
-			{
-				fprintf(archivoSalida,"Fichero: %s Numero De Bloques: %ld\n", dp->d_name,bufferDeArchivo.st_blocks);
-				pthread_mutex_lock(&numTotalBlocksLock);
-				numTotalBlocks += bufferDeArchivo.st_blocks;
-				pthread_mutex_unlock(&numTotalBlocksLock);
-			}
-		}
-	}
-
-	return numTotalBlocks;
-}
-
-/*
- * Function:  funcHilo
- * --------------------
- *  Funcion que ejecturan los hilos
- *
- *  threadarg: Informacion necesaria para que el hilo creado pueda completar la funcion
- *
- *  returns: void
- */
 void *funcHilo(void *threadarg)
 {
 //	struct thread_data
@@ -314,9 +256,14 @@ void *funcHilo(void *threadarg)
 			if (S_ISDIR(bufferDeArchivo.st_mode))
 			{
 				fprintf(archivoSalida,"Directorio: %s\n", dp->d_name);
-				fprintf(archivoSalida,"Directorio Completo: %s/%s\n",dataHilo->directory,dp->d_name);
-				fprintf(directorioNuevo,"directorioNuevo = %s/%s\n",dataHilo->directory,dp->d_name);
-				pushToStack(&pilaDirectorios,directorioNuevo);
+				if (strcmp(dp->d_name,dataHilo->directory) != 0)
+				{
+					strcpy(directorioNuevo,"");
+					fprintf(archivoSalida,"Directorio Completo: %s/%s\n",dataHilo->directory,dp->d_name);
+					fprintf(directorioNuevo,"%s/%s",dataHilo->directory,dp->d_name);
+					fprintf(archivoSalida,"directorioNuevo = %s\n",directorioNuevo);
+					pushToStack(&pilaDirectorios,directorioNuevo);
+				}
 			}
 			else
 			{
