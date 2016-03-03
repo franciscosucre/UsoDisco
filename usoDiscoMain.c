@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
 					exit(-1);
 				}
         		dirSwith = 1;
+        		closedir(directorioTemp);
 			}
         	/* Caso 2.3: Se recibio el argumento del numero de concurrencia */
         	else if ((strcmp(argv[i],"-o")) == 0 && salidaSwith == 0)
@@ -160,6 +161,7 @@ int main(int argc, char *argv[])
 
 	while (stackSize(&pilaDirectorios) > 0)
 	{
+		strcpy(thread_data.directory,"");
 		popFromStack(&pilaDirectorios,thread_data.directory);
 		printf("thread_data.directory = %s\n",thread_data.directory);
 		rc = pthread_create(&hilos[0], NULL, funcHilo, (void *) &thread_data);
@@ -246,7 +248,9 @@ void *funcHilo(void *threadarg)
 
 	for (dp = readdir(directorioTemp); dp != NULL; dp = readdir(directorioTemp))
 	{
-		exists = stat(dp->d_name, &bufferDeArchivo);
+		strcpy(directorioNuevo,"");
+		sprintf(directorioNuevo,"%s/%s",dataHilo->directory,dp->d_name);
+		exists = stat(directorioNuevo, &bufferDeArchivo);
 		if (exists < 0)
 		{
 			fprintf(stderr, "%s not found\n", dp->d_name);
@@ -255,12 +259,11 @@ void *funcHilo(void *threadarg)
 		{
 			if (S_ISDIR(bufferDeArchivo.st_mode))
 			{
-				fprintf(archivoSalida,"Directorio: %s\n", dp->d_name);
-				if (strcmp(dp->d_name,dataHilo->directory) != 0)
+
+				if (strcmp(dp->d_name,".") != 0 && strcmp(dp->d_name,"..") != 0)
 				{
-					strcpy(directorioNuevo,"");
+					fprintf(archivoSalida,"Directorio: %s\n", dp->d_name);
 					fprintf(archivoSalida,"Directorio Completo: %s/%s\n",dataHilo->directory,dp->d_name);
-					fprintf(directorioNuevo,"%s/%s",dataHilo->directory,dp->d_name);
 					fprintf(archivoSalida,"directorioNuevo = %s\n",directorioNuevo);
 					pushToStack(&pilaDirectorios,directorioNuevo);
 				}
@@ -274,7 +277,7 @@ void *funcHilo(void *threadarg)
 			}
 		}
 	}
-
+	closedir(directorioTemp);
 	return numTotalBlocks;
 }
 
