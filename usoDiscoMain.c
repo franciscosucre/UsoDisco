@@ -234,7 +234,7 @@ void *funcHilo(void *threadarg)
 			if (S_ISDIR(bufferDeArchivo.st_mode))
 			{
 				fprintf(archivoSalida,"Directorio: %s\n", dp->d_name);
-				fprintf(listaDirectorios[numDirectorios],"%s/%s",dataHilo->directory,dp->d_name);
+				fprintf(archivoSalida,"%s/%s",dataHilo->directory,dp->d_name);
 				numDirectorios += 1;
 			}
 			else

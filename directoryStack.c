@@ -6,6 +6,7 @@
  */
 
 #include "messages.h"         	// Mensajes De Error y funciones comunes
+#include "directoryStack.h"         	// Mensajes De Error y funciones comunes
 #include <unistd.h>				// getcwd
 #include <string.h>             // strlen
 #include <stdio.h>              // printf
@@ -22,24 +23,56 @@
 #define DEFAULT_CONCURRENCY 1
 #define DEFAULT_FILE "None"
 
-struct directoryStack
+void initializeStack(struct directoryStack* threadQueue);
+void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN]);
+void popFromStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN]);
+int  stackSize(struct directoryStack* stack);
+
+void initializeStack(struct directoryStack* threadQueue)
+
 {
-	char listaDirectorios[MAXDIR][MSG_LEN];
-};
-
-void pushToStack(directoryStack* stack,char directorioNuevo[MSG_LEN])
-
-{
-
+	int i;
+	for (i = 0; i < MAXDIR; i++)
+	{
+		strcpy(threadQueue->listaDirectorios[i],"");
+	}
 
 }
 
-char directorioNuevo[MSG_LEN] popFromStack(directoryStack* stack)
+void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN])
+
 {
+	int i;
+	int lastPosition;
+	char directoryToReturn[MSG_LEN];
+
+	lastPosition = queueSize(stack);
+
+	strcpy(stack->listaDirectorios[lastPosition],directorioNuevo);
 
 }
 
-int  stackSize(directoryStack* stack)
+void popFromStack(struct directoryStack* stack,char* directoryToReturn)
 {
+	int i;
+	int lastPosition;
+
+	lastPosition = queueSize(stack);
+
+	strcpy(directoryToReturn,stack->listaDirectorios[lastPosition - 1]);
+	strcpy(stack->listaDirectorios[lastPosition - 1],"");
+}
+
+int  stackSize(struct directoryStack* stack)
+{
+	int i;
+	for (i = 0; i < MAXDIR; i++)
+	{
+		if (strcmp(stack->listaDirectorios[i],"") == 0)
+		{
+			return i - 1;
+		}
+	}
+	return MAXDIR;
 
 }
