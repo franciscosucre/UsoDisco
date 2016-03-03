@@ -21,11 +21,10 @@
 #define NAME_LEN 50
 #define MAXDIR 40
 #define DEFAULT_CONCURRENCY 1
-#define DEFAULT_FILE "None"
 
 void initializeQueue(struct pThreadQueue* threadQueue);
-void Enqueue(struct pThreadQueue* threadQueue,pthread_t* newThread);
-pthread_t* Dequeue(struct pThreadQueue* threadQueue);
+void Enqueue(struct pThreadQueue* threadQueue,pthread_t newThread);
+pthread_t Dequeue(struct pThreadQueue* threadQueue);
 int  queueSize(struct pThreadQueue* threadQueue);
 
 void initializeQueue(struct pThreadQueue* threadQueue)
@@ -39,7 +38,7 @@ void initializeQueue(struct pThreadQueue* threadQueue)
 
 }
 
-void Enqueue(struct pThreadQueue* threadQueue,pthread_t* newThread)
+void Enqueue(struct pThreadQueue* threadQueue,pthread_t newThread)
 
 {
 	int lastPosition;
@@ -49,7 +48,7 @@ void Enqueue(struct pThreadQueue* threadQueue,pthread_t* newThread)
 
 }
 
-pthread_t* Dequeue(struct pThreadQueue* threadQueue)
+pthread_t Dequeue(struct pThreadQueue* threadQueue)
 {
 	int i;
 	int lastPosition;
@@ -70,13 +69,22 @@ pthread_t* Dequeue(struct pThreadQueue* threadQueue)
 int  queueSize(struct pThreadQueue* threadQueue)
 {
 	int i;
-	for (i = 0; i < MAXDIR; i++)
+
+	if ((threadQueue->queque[0]) == NULL)
 	{
-		if (threadQueue->queque[i] == NULL)
+		return 0;
+	}
+	else
+	{
+		for (i = 0; i < MAXDIR; i++)
 		{
-			return i - 1;
+			if (threadQueue->queque[i] == NULL)
+			{
+				return i - 1;
+			}
 		}
 	}
+
 	return MAXDIR;
 
 }

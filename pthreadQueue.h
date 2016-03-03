@@ -21,17 +21,15 @@
 #define MSG_LEN 500             // NOTA: VER EN CUANTO SE DEJARA ESTE ARREGLO
 #define NAME_LEN 50
 #define MAXDIR 40
-#define DEFAULT_CONCURRENCY 1
-#define DEFAULT_FILE "None"
 
 struct pThreadQueue
 {
-	pthread_t *queque[MAXDIR];
+	pthread_t queque[MAXDIR];
 }ThreadQueue;
 
 void initializeQueue(struct pThreadQueue* threadQueue);
-void Enqueue(struct pThreadQueue* threadQueue,pthread_t* newThread);
-pthread_t* Dequeue(struct pThreadQueue* threadQueue);
+void Enqueue(struct pThreadQueue* threadQueue,pthread_t newThread);
+pthread_t Dequeue(struct pThreadQueue* threadQueue);
 int  queueSize(struct pThreadQueue* threadQueue);
 
 #endif /* PTHREADQUEUE_H_ */

@@ -21,22 +21,21 @@
 #define NAME_LEN 50
 #define MAXDIR 40
 #define DEFAULT_CONCURRENCY 1
-#define DEFAULT_FILE "None"
 
 void initializeStack(struct directoryStack* threadQueue);
 void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN]);
 void popFromStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN]);
 int  stackSize(struct directoryStack* stack);
 
-void initializeStack(struct directoryStack* threadQueue)
+void initializeStack(struct directoryStack* stack)
 
 {
 	int i;
 	for (i = 0; i < MAXDIR; i++)
 	{
-		strcpy(threadQueue->listaDirectorios[i],"");
+		strcpy(stack->listaDirectorios[i],"");
 	}
-
+	printf("Inicialize el stack\n");
 }
 
 void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN])
@@ -46,18 +45,19 @@ void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN])
 	int lastPosition;
 	char directoryToReturn[MSG_LEN];
 
-	lastPosition = queueSize(stack);
+	lastPosition = stackSize(stack);
+	printf("directorioNuevo = %s\n", directorioNuevo);
 
 	strcpy(stack->listaDirectorios[lastPosition],directorioNuevo);
 
 }
 
-void popFromStack(struct directoryStack* stack,char* directoryToReturn)
+void popFromStack(struct directoryStack* stack,char directoryToReturn[MSG_LEN])
 {
 	int i;
 	int lastPosition;
 
-	lastPosition = queueSize(stack);
+	lastPosition = stackSize(stack);
 
 	strcpy(directoryToReturn,stack->listaDirectorios[lastPosition - 1]);
 	strcpy(stack->listaDirectorios[lastPosition - 1],"");
@@ -66,13 +66,22 @@ void popFromStack(struct directoryStack* stack,char* directoryToReturn)
 int  stackSize(struct directoryStack* stack)
 {
 	int i;
-	for (i = 0; i < MAXDIR; i++)
+
+	if (strcmp(stack->listaDirectorios[0],"") == 0)
 	{
-		if (strcmp(stack->listaDirectorios[i],"") == 0)
+		return 0;
+	}
+	else
+	{
+		for (i = 1; i < MAXDIR; i++)
 		{
-			return i - 1;
+			if (strcmp(stack->listaDirectorios[i],"") == 0)
+			{
+				return i;
+			}
 		}
 	}
+
 	return MAXDIR;
 
 }
