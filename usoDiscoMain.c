@@ -226,8 +226,12 @@ int main(int argc, char *argv[])
 							}
 							break;
 						}
+						else
+						{
+							pthread_mutex_unlock(&hilosEstadosBlocksLock);
+						}
 					}
-					pthread_mutex_unlock(&hilosEstadosBlocksLock);
+
 				}
 			}
 			i = i + 1;
