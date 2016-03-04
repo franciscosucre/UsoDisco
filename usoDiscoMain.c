@@ -6,8 +6,6 @@
  */
 
 #include "messages.h"         	// Mensajes De Error y funciones comunes
-#include "directoryStack.h"     // Pila de directorios
-#include "pthreadQueue.h"       // Cola de hilos
 #include <unistd.h>				// getcwd
 #include <string.h>             // strlen
 #include <stdio.h>              // printf
@@ -31,16 +29,20 @@ struct thread_data
    char directory[MSG_LEN];
 };
 
-FILE * archivoSalida;					// Archivo de salida
-int numDirectorios;						// Numero de directorios en la lista
-int dirAnalizar;						// Indice del directorio a analizar
-char listaDirectorios[MAXDIR][MSG_LEN]; // Lista de directorios a analizar
+struct directoryStack
+{
+	char listaDirectorios[MAXDIR][MSG_LEN];
+};
+
+FILE * archivoSalida;							// Archivo de salida
+int numDirectorios;								// Numero de directorios en la lista
+int dirAnalizar;								// Indice del directorio a analizar
+char listaDirectorios[MAXDIR][MSG_LEN]; 		// Lista de directorios a analizar
 pthread_mutex_t numTotalBlocksLock;
 pthread_mutex_t hilosEstadosBlocksLock;
 pthread_mutex_t pilaDirectoriosBlocksLock;
 int numTotalBlocks;
 struct directoryStack pilaDirectorios;
-struct pThreadQueue colaHilos;
 int hilosEstado[MAXDIR];
 clock_t start, end;
 double cpu_time_used;
