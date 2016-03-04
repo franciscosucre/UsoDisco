@@ -27,9 +27,8 @@ struct pThreadQueue
 	pthread_t queque[MAXDIR];
 }ThreadQueue;
 
-void initializeQueue(struct pThreadQueue* threadQueue);
-void Enqueue(struct pThreadQueue* threadQueue,pthread_t newThread);
-pthread_t Dequeue(struct pThreadQueue* threadQueue);
-int  queueSize(struct pThreadQueue* threadQueue);
+void inicializarEstadoHilo(int *estadoHilos[MAXDIR]);
+void marcarHiloOcupado(int *estadoHilos[MAXDIR],int posicion);
+void marcarHiloLibre(int *estadoHilos[MAXDIR],int posicion);
 
 #endif /* PTHREADQUEUE_H_ */

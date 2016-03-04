@@ -14,9 +14,10 @@
 #include <stdlib.h>				// exit
 #include <pthread.h>			// Hilos
 #include <dirent.h>				// dirent
-#include <semaphore.h>
 #include <sys/types.h>
-#include <sys/stat.h>
+#include <sys/stat.h>			// Stats
+#include <time.h>				// Clock
+
 
 #define MSG_LEN 500             // NOTA: VER EN CUANTO SE DEJARA ESTE ARREGLO
 #define NAME_LEN 50
@@ -27,7 +28,6 @@
 struct thread_data
 {
    int  thread_id;
-   int  size;
    char directory[MSG_LEN];
 };
 
@@ -36,18 +36,33 @@ int numDirectorios;						// Numero de directorios en la lista
 int dirAnalizar;						// Indice del directorio a analizar
 char listaDirectorios[MAXDIR][MSG_LEN]; // Lista de directorios a analizar
 pthread_mutex_t numTotalBlocksLock;
+pthread_mutex_t hilosEstadosBlocksLock;
+pthread_mutex_t pilaDirectoriosBlocksLock;
 int numTotalBlocks;
 struct directoryStack pilaDirectorios;
 struct pThreadQueue colaHilos;
+int hilosEstado[MAXDIR];
+clock_t start, end;
+double cpu_time_used;
+struct thread_data thread_data;
+int stackSizeTemp;
 
 void *funcHilo(void *threadarg);
+
+void liberarHilo(int i);
+void asignarHilo(int posicion);
+
+void initializeStack(struct directoryStack* stack);
+void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN]);
+void printStack(struct directoryStack* stack);
+void popFromStack(struct directoryStack* stack,char directoryToReturn[MSG_LEN]);
 
 int main(int argc, char *argv[])
 {
 	char directorioInicial[MSG_LEN];		// Directorio a analizar
 	char archivoSalidaNombre[MSG_LEN];		// Nombre del Archivo de salida
 	int nivelConcurrencia;					// Numero de hilos a crear
-	int i;									// Iterador
+	int i,j;								// Iteradores
 	char* cwd;								// Apuntador utilizado para obtener el directorio actual
 	int salidaSwith,levelSwith,				// Variables booleanas que indican si ya se dio un argumento
 	dirSwith;
@@ -60,7 +75,6 @@ int main(int argc, char *argv[])
 											// de los ficheros o directorios
 	int exists;								// Variable que indica si un directorio existe
 	int bloquesTotal;						// Numero de bloques en total
-	struct thread_data threads[MAXDIR];		//
 	pthread_t hilos[MAXDIR];
 
 
@@ -107,7 +121,7 @@ int main(int argc, char *argv[])
         	else if ((strcmp(argv[i],"-d")) == 0 && dirSwith == 0)
 			{
         		strcpy(directorioInicial,argv[i + 1]);
-        		printf("El directorio inicial es %s",directorioInicial);
+        		printf("El directorio inicial es %s\n",directorioInicial);
 				directorioTemp = opendir(directorioInicial);
 
 				if (directorioTemp == NULL)
@@ -143,70 +157,113 @@ int main(int argc, char *argv[])
 	}
 
 	bloquesTotal = 0;
-	dirAnalizar = 0;
-
-	printf("Llegue hasta aqui\n");
-
-	struct thread_data thread_data_array[nivelConcurrencia];
-	struct thread_data thread_data;
 
 	initializeStack(&pilaDirectorios);
-	initializeQueue(&colaHilos);
+
+	for (i = 0; i < nivelConcurrencia; i++)
+	{
+		hilosEstado[i]= 0;
+	}
 
 	pushToStack(&pilaDirectorios,directorioInicial);
 
-	printf("El directorio es %s\n",pilaDirectorios.listaDirectorios[0]);
+	pthread_mutex_init(&numTotalBlocksLock,NULL);
+	pthread_mutex_init(&hilosEstadosBlocksLock,NULL);
+	pthread_mutex_init(&pilaDirectoriosBlocksLock,NULL);
 
-	printf("stackSize(&pilaDirectorios) es %d\n",stackSize(&pilaDirectorios));
+	i = 0;
 
-	while (stackSize(&pilaDirectorios) > 0)
+	start = clock();
+
+	while (1)
 	{
-		strcpy(thread_data.directory,"");
-		popFromStack(&pilaDirectorios,thread_data.directory);
-		printf("thread_data.directory = %s\n",thread_data.directory);
-		rc = pthread_create(&hilos[0], NULL, funcHilo, (void *) &thread_data);
-		rc = pthread_join(hilos[0], &status);
+		if ((stackSize(&pilaDirectorios)==0) && (hilosTrabajando(hilosEstado) == 0))
+		{
+			break;
+		}
+		while (stackSize(&pilaDirectorios)>0)
+		{
+			if (hilosEstado[i] == 0)
+			{
+				printf("i = %d\n",i);
+				strcpy(thread_data.directory,"");
+
+				/* tomo un directorio de la pila */
+				popFromStack(&pilaDirectorios,thread_data.directory);
+
+				/* Defino el id del hilo */
+				thread_data.thread_id = i;
+
+				/* Marco el hilo como ocupado */
+				asignarHilo(i);
+
+				rc = pthread_create(&hilos[i], NULL, funcHilo, (void *) &thread_data);
+
+				//printStack(&pilaDirectorios);
+
+				/* Si la cola esta vacia pero hay hilos trabajando esperamos que traigan informacion de vuelta */
+				if ((stackSize(&pilaDirectorios)==0) && (hilosTrabajando(hilosEstado) > 0))
+				{
+					pthread_mutex_lock(&hilosEstadosBlocksLock);
+					/* Retorno De Hilos */
+					for(j=0; j<nivelConcurrencia; j++)
+					{
+
+						if (hilosEstado[j] == 1)
+						{
+							rc = pthread_join(hilos[j], &status);
+							if (rc)
+							{
+								printf("ERROR; return code from pthread_join() is %d\n", rc);
+							}
+							break;
+						}
+
+					}
+					pthread_mutex_unlock(&hilosEstadosBlocksLock);
+				}
+			}
+			i = i + 1;
+
+			if (i == nivelConcurrencia)
+			{
+				i = 0;
+			}
+
+			break;
+		}
+
+		printf("sigo aqui\n");
+
 	}
-
-
-	/* Creacion De Hilos */
-
-	/* A esto hay que
-	 *
-	for(i=0; i<nivelConcurrencia; i++)
-	{
-	   thread_data_array[i].thread_id = i;
-	   thread_data_array[i].directory = "";
-	   rc = pthread_create(&hilos[i], NULL, funcHilo, (void *) &thread_data_array[i]);
-	}
-	*/
 
 	/* Retorno De Hilos */
-	/*
 	for(i=0; i<nivelConcurrencia; i++)
 	{
-	   rc = pthread_join(hilos[i], &status);
-	   if (rc)
-	   {
-		  printf("ERROR; return code from pthread_join() is %d\n", rc);
-		  exit(­1);
-	   }
-	printf("Main: completed join with thread %ld having a status of %ld\n",i,(long)status);
+		if (hilosEstado[i] == 1)
+		{
+			rc = pthread_join(hilos[i], &status);
+			if (rc)
+			{
+				printf("ERROR; return code from pthread_join() is %d\n", rc);
+			}
+		}
 	}
-	*/
+
+	end = clock();
+	cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
 	printf("\n");
+	printf("Tiempo total fue de -->  %e\n",cpu_time_used);
 	printf("nivelConcurrencia = %d\n",nivelConcurrencia);
 	printf("directorio = %s\n",directorioInicial);
 	printf("archivoSalidaNombre = %s\n",archivoSalidaNombre);
-	printf("numTotalBlocks = %d\n",numTotalBlocks);
-
+	fprintf(archivoSalida,"numTotalBlocks = %d\n",numTotalBlocks);
 
 	if (archivoSalida != NULL)
 	{
 		fclose(archivoSalida);
 	}
-	closedir(directorioTemp);
 	return 0;
 }
 
@@ -221,23 +278,16 @@ int main(int argc, char *argv[])
  */
 void *funcHilo(void *threadarg)
 {
-//	struct thread_data
-//	{
-//	   int  thread_id;
-//	   int  size;
-//	   char directory[MSG_LEN];
-//	};
-	struct thread_data *dataHilo;
+	struct thread_data *dataHilo;			//
 	DIR* directorioTemp;					// Variable para almacenar directorios
 	struct dirent *dp;						// Estructura utiliada para seleccionar los ficheros al
 											// recorrer
 	struct stat bufferDeArchivo;			// Estructura utilizada para guardar la informacion
 											// de los ficheros o directorios
 	int exists;								// Variable que indica si un directorio existe
-	char directorioNuevo[MSG_LEN];					// Variable para formar un nuevo directorio
+	char directorioNuevo[MSG_LEN];			// Variable para formar un nuevo directorio
 
 	dataHilo = (struct thread_data *) threadarg;
-	printf("dataHilo->directory = %s\n",dataHilo->directory );
 	directorioTemp = opendir(dataHilo->directory );
 
 	if (directorioTemp == NULL)
@@ -259,18 +309,15 @@ void *funcHilo(void *threadarg)
 		{
 			if (S_ISDIR(bufferDeArchivo.st_mode))
 			{
-
 				if (strcmp(dp->d_name,".") != 0 && strcmp(dp->d_name,"..") != 0)
 				{
-					fprintf(archivoSalida,"Directorio: %s\n", dp->d_name);
-					fprintf(archivoSalida,"Directorio Completo: %s/%s\n",dataHilo->directory,dp->d_name);
-					fprintf(archivoSalida,"directorioNuevo = %s\n",directorioNuevo);
+					fprintf(archivoSalida,"HILO: Directorio Completo: %s/%s\n",dataHilo->directory,dp->d_name);
 					pushToStack(&pilaDirectorios,directorioNuevo);
 				}
 			}
 			else
 			{
-				fprintf(archivoSalida,"Fichero: %s Numero De Bloques: %ld\n", dp->d_name,bufferDeArchivo.st_blocks);
+				fprintf(archivoSalida,"HILO: Fichero: %s Numero De Bloques: %ld\n", dp->d_name,bufferDeArchivo.st_blocks);
 				pthread_mutex_lock(&numTotalBlocksLock);
 				numTotalBlocks += bufferDeArchivo.st_blocks;
 				pthread_mutex_unlock(&numTotalBlocksLock);
@@ -278,6 +325,141 @@ void *funcHilo(void *threadarg)
 		}
 	}
 	closedir(directorioTemp);
-	return numTotalBlocks;
+
+	/* Marco el hilo como libre */
+	liberarHilo(dataHilo->thread_id);
+
+	return (void *) 0;
 }
 
+void liberarHilo(int posicion)
+{
+	pthread_mutex_lock(&hilosEstadosBlocksLock);
+	hilosEstado[posicion] = 0;
+	pthread_mutex_unlock(&hilosEstadosBlocksLock);
+}
+
+void asignarHilo(int posicion)
+{
+	pthread_mutex_lock(&hilosEstadosBlocksLock);
+	hilosEstado[posicion] = 1;
+	pthread_mutex_unlock(&hilosEstadosBlocksLock);
+}
+
+int hilosTrabajando(int estadoHilos[MAXDIR])
+{
+	int trabajadores;
+	int i;
+
+	trabajadores = 0;
+
+
+	pthread_mutex_lock(&hilosEstadosBlocksLock);
+	for (i = 0; i < MAXDIR; i++)
+	{
+
+		if (estadoHilos[i]== 1)
+		{
+			trabajadores = 1;
+			break;
+		}
+
+	}
+	pthread_mutex_unlock(&hilosEstadosBlocksLock);
+
+	return trabajadores;
+}
+
+/* PILA DE DIRECTORIOS */
+
+void initializeStack(struct directoryStack* stack)
+
+{
+	int i;
+	for (i = 0; i < MAXDIR; i++)
+	{
+		strcpy(stack->listaDirectorios[i],"");
+	}
+	printf("Inicialize el stack\n");
+}
+
+int  stackSize(struct directoryStack* stack)
+{
+	int i;
+	int returnValue;
+
+	pthread_mutex_lock(&pilaDirectoriosBlocksLock);
+	if (strcmp(stack->listaDirectorios[0],"") == 0)
+	{
+		returnValue = 0;
+	}
+	else
+	{
+		for (i = 1; i < MAXDIR; i++)
+		{
+			if (strcmp(stack->listaDirectorios[i],"") == 0)
+			{
+				returnValue = i;
+				break;
+			}
+		}
+	}
+	pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+
+	return returnValue;
+
+
+}
+
+void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN])
+
+{
+	int i;
+	int lastPosition;
+	char directoryToReturn[MSG_LEN];
+
+	lastPosition = stackSize(stack);
+
+	pthread_mutex_lock(&pilaDirectoriosBlocksLock);
+	strcpy(stack->listaDirectorios[lastPosition],directorioNuevo);
+	pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+
+}
+
+void popFromStack(struct directoryStack* stack,char directoryToReturn[MSG_LEN])
+{
+	int i;
+	int lastPosition;
+
+	lastPosition = stackSize(stack);
+
+	pthread_mutex_lock(&pilaDirectoriosBlocksLock);
+	strcpy(directoryToReturn,stack->listaDirectorios[lastPosition - 1]);
+	strcpy(stack->listaDirectorios[lastPosition - 1],"");
+	pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+}
+
+void printStack(struct directoryStack* stack)
+{
+	int i;
+	int lastPosition;
+
+	lastPosition = stackSize(stack);
+
+	printf("\n\n----- ESTADO ACTUAL DE LA PILA----- \n\n");
+
+	pthread_mutex_lock(&pilaDirectoriosBlocksLock);
+	if (strcmp(stack->listaDirectorios[i],"") == 0)
+	{
+		printf("Pila Vacia!\n\n");
+	}
+	else
+	{
+		for (i = 0; i < lastPosition; i++)
+		{
+			printf("elemento %d de la pila --> %s\n",i,stack->listaDirectorios[i]);
+		}
+	}
+	pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+
+}

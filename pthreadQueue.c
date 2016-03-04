@@ -22,69 +22,30 @@
 #define MAXDIR 40
 #define DEFAULT_CONCURRENCY 1
 
-void initializeQueue(struct pThreadQueue* threadQueue);
-void Enqueue(struct pThreadQueue* threadQueue,pthread_t newThread);
-pthread_t Dequeue(struct pThreadQueue* threadQueue);
-int  queueSize(struct pThreadQueue* threadQueue);
+void inicializarEstadoHilo(int *estadoHilos[MAXDIR]);
+void marcarHiloOcupado(int *estadoHilos[MAXDIR],int posicion);
+void marcarHiloLibre(int *estadoHilos[MAXDIR],int posicion);
 
-void initializeQueue(struct pThreadQueue* threadQueue)
+void inicializarEstadoHilo(int *estadoHilos[MAXDIR])
 
 {
 	int i;
 	for (i = 0; i < MAXDIR; i++)
 	{
-		threadQueue->queque[i] = NULL;
+		estadoHilos[i]= 0;
 	}
-
+	printf("Inicialize el stack\n");
 }
 
-void Enqueue(struct pThreadQueue* threadQueue,pthread_t newThread)
+void marcarHiloOcupado(int *estadoHilos[MAXDIR],int posicion)
 
 {
-	int lastPosition;
-	lastPosition = queueSize(threadQueue);
-
-	threadQueue->queque[lastPosition] = newThread;
-
+	*estadoHilos[posicion] = 1;
 }
 
-pthread_t Dequeue(struct pThreadQueue* threadQueue)
+void marcarHiloLibre(int *estadoHilos[MAXDIR],int posicion)
 {
-	int i;
-	int lastPosition;
-	pthread_t *threadToReturn;
-
-	lastPosition = queueSize(threadQueue);
-
-	threadToReturn = threadQueue->queque[0];
-
-	for (i = 0; i < lastPosition; i++)
-	{
-		threadQueue->queque[i] = threadQueue->queque[i + 1];
-	}
-
-	return threadToReturn;
+	*estadoHilos[posicion] = 0;
 }
 
-int  queueSize(struct pThreadQueue* threadQueue)
-{
-	int i;
 
-	if ((threadQueue->queque[0]) == NULL)
-	{
-		return 0;
-	}
-	else
-	{
-		for (i = 0; i < MAXDIR; i++)
-		{
-			if (threadQueue->queque[i] == NULL)
-			{
-				return i - 1;
-			}
-		}
-	}
-
-	return MAXDIR;
-
-}
