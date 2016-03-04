@@ -327,7 +327,7 @@ void *examinarDirectorio(void *threadarg)
 	char directorioNuevo[MSG_LEN];			// Variable para formar un nuevo directorio
 
 	respuestaHilo.bloques = 0;
-	initializeStack(&(respuestaHilo.pilaDirectorios));
+	initializeStack(&stackTemp);
 
 	/* Obtenemos los argumentos de la funcion */
 	dataHilo = (struct thread_data *) threadarg;
@@ -373,7 +373,7 @@ void *examinarDirectorio(void *threadarg)
 				{
 					/* Empilamos el nuevo  directorio en nuestra pila */
 					//fprintf(archivoSalida,"Directorio Completo: %s/%s\n",dataHilo->directory,dp->d_name);
-					pushToStack(stackTemp,directorioNuevo);
+					pushToStack(&stackTemp,directorioNuevo);
 				}
 			}
 			/* Caso 2.2: El archivo es un Archvo Regular o Fichero */
@@ -387,12 +387,12 @@ void *examinarDirectorio(void *threadarg)
 		}
 	}
 
-	/* Marco el hilo como esperando */
-	esperarHilo(dataHilo.thread_id;);
-
+	/* Obtenemos la pila de directorio */
+	respuestaHilo.pilaDirectorios = stackTemp;
 	/* Cierro el directorio */
 	closedir(directorioTemp);
-
+	/* Marco el hilo como esperando */
+	esperarHilo(dataHilo->thread_id);
 	/* Retorno un exito */
 	return (void *) respuestaHilo;
 }
