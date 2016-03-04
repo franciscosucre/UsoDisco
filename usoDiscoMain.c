@@ -51,8 +51,9 @@ int stackSizeTemp;
 
 void *funcHilo(void *threadarg);
 
-void liberarHilo(int i);
+void liberarHilo(int posicion);
 void asignarHilo(int posicion);
+int hilosTrabajando();
 
 void initializeStack(struct directoryStack* stack);
 void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN]);
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
 
 	while (1)
 	{
-		if ((stackSize(&pilaDirectorios)==0) && (hilosTrabajando(hilosEstado) == 0))
+		if ((stackSize(&pilaDirectorios)==0) && (hilosTrabajando() == 0))
 		{
 			break;
 		}
@@ -200,19 +201,24 @@ int main(int argc, char *argv[])
 				asignarHilo(i);
 
 				rc = pthread_create(&hilos[i], NULL, funcHilo, (void *) &thread_data);
+				if (rc)
+				{
+					printf("ERROR; return code from pthread_create() is %d\n", rc);
+				}
 
 				//printStack(&pilaDirectorios);
 
 				/* Si la cola esta vacia pero hay hilos trabajando esperamos que traigan informacion de vuelta */
-				if ((stackSize(&pilaDirectorios)==0) && (hilosTrabajando(hilosEstado) > 0))
+				if ((stackSize(&pilaDirectorios)==0) && (hilosTrabajando() > 0))
 				{
-					pthread_mutex_lock(&hilosEstadosBlocksLock);
+
 					/* Retorno De Hilos */
 					for(j=0; j<nivelConcurrencia; j++)
 					{
-
+						pthread_mutex_lock(&hilosEstadosBlocksLock);
 						if (hilosEstado[j] == 1)
 						{
+							pthread_mutex_unlock(&hilosEstadosBlocksLock);
 							rc = pthread_join(hilos[j], &status);
 							if (rc)
 							{
@@ -220,7 +226,6 @@ int main(int argc, char *argv[])
 							}
 							break;
 						}
-
 					}
 					pthread_mutex_unlock(&hilosEstadosBlocksLock);
 				}
@@ -348,7 +353,7 @@ void asignarHilo(int posicion)
 	pthread_mutex_unlock(&hilosEstadosBlocksLock);
 }
 
-int hilosTrabajando(int estadoHilos[MAXDIR])
+int hilosTrabajando()
 {
 	int trabajadores;
 	int i;
@@ -359,13 +364,11 @@ int hilosTrabajando(int estadoHilos[MAXDIR])
 	pthread_mutex_lock(&hilosEstadosBlocksLock);
 	for (i = 0; i < MAXDIR; i++)
 	{
-
-		if (estadoHilos[i]== 1)
+		if (hilosEstado[i]== 1)
 		{
 			trabajadores = 1;
 			break;
 		}
-
 	}
 	pthread_mutex_unlock(&hilosEstadosBlocksLock);
 
