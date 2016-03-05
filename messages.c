@@ -18,23 +18,28 @@
 
 #define BASIC_PERMISSIONS 0666
 #define MSG_LEN 500
+#define MENU_LEN 800
+#define ERROR_LEN 100
 
 // Mensajes de error
 
-const char *mkfifoError = "mkfifo Error";
-const char *selectError = "select Error";
-const char *openError = "open Error";
-const char *getcwdError = "getcwd() Error";
-const char *mallocError = "malloc Error";
-const char *dirNotExistsError = "El Directorio deseado no existe";
-const char *argNumError = "Numero Incorrecto de Argumentos";
-const char *argOrdError = "Orden Incorrecto de Argumentos";
-const char *invOrdError = "Argumentos Invalidos";
+const char pthreadCreateError[ERROR_LEN] = "pthreadCreateError";
+const char pthreadJoinError[ERROR_LEN] = "pthreadJoinError";
+const char mkfifoError[ERROR_LEN] = "mkfifo Error";
+const char selectError[ERROR_LEN] = "select Error";
+const char openDirError[ERROR_LEN] = "openDir Error";
+const char openError[ERROR_LEN] = "open Error";
+const char getcwdError[ERROR_LEN] = "getcwd() Error";
+const char mallocError[ERROR_LEN] = "malloc Error";
+const char dirNotExistsError[ERROR_LEN] = "El Directorio deseado no existe";
+const char argNumError[ERROR_LEN] = "Numero Incorrecto de Argumentos";
+const char argOrdError[ERROR_LEN] = "Orden Incorrecto de Argumentos";
+const char invOrdError[ERROR_LEN] = "Argumentos Invalidos";
 
 
 // Mensajes de sistema
 
-const char *helpMenu = "\n"
+const char helpMenu[MENU_LEN] = "\n"
 		"Sintaxis\n"
 		"\n"
 		"UsoDisco [-h] | [-n i] [-d directorio] [-o salida ]\n"
@@ -67,121 +72,5 @@ void errorAndExit(const char* errorMessage)
 	exit(0);
 }
 
-char* getErrorMessage(const char* errorMessage,int line, char* file)
-
-{
-	// Convertimos el numero de linea en un String
-
-	char* lineString;
-	lineString = (char *) malloc(sizeof(line));
-	if (lineString == NULL)
-	{
-		errorAndExit(mallocError);
-	}
-	sprintf(lineString, "%d", line);
-
-	// Inicializamos la variable en la que devolveremos el error
-
-	char* finalMessage;
-	finalMessage = (char *) malloc(strlen(errorMessage) + strlen(" at line ")
-			+ strlen(lineString) + strlen(" in file ") + strlen(file));
-	if (finalMessage == NULL)
-	{
-		errorAndExit(mallocError);
-	}
-
-	// Iniciamos el mensaje con el error
-
-	finalMessage = strcpy(finalMessage, errorMessage);
-
-	// Agregamos la linea en la que ocurrio
-
-	strcat(finalMessage, " at line ");
-	strcat(finalMessage, lineString);
-
-	// Agregamos el archivo donde ocurrio
-
-	strcat(finalMessage, " in file ");
-	strcat(finalMessage, file);
-
-	// Retornamos el mensaje final
-
-	return finalMessage;
-
-}
 
 
-
-// Separa un string con el delimitador seleccionado y devuelve la palabra seleccionada con index
-char* getWord(char* string,char* delimeter,int index)
-
-{
-	// Si la lista es nula entonces abandonamos la funcion
-
-	if (string == NULL)
-	{
-		return NULL;
-	}
-
-	char* stringCopy; //Copia del string original para no cambiarlo
-	char* word; // Palabra a ser obtenida
-	int i; // Iterador
-	char** stringCopyPointer; // Apuntador a la copia del string necesaria para la funcion strsep
-	char* stringCopyAddress;
-	char* stringCopyPointerAddress;
-
-	// Reservamos la memoria para la copia del string
-
-	stringCopy = (char *) malloc(strlen(string));
-	stringCopyAddress = stringCopy;
-	strcpy(stringCopy, string);
-	stringCopyPointer  = &stringCopy;
-	word = (char *) malloc(strlen(string));
-
-	// Recorremos la lista de palabras obteniendo sus palabras una a una
-
-	for ( i = 0; i <= index; i = i + 1 )
-	{
-		strcpy(word, strsep(stringCopyPointer,delimeter));
-
-		// Si la palabra es igual al string completo, nos salimos de la funcion
-
-		if(stringCopy == NULL)
-		{
-			return word;
-		}
-
-	}
-
-	// Si no ocurrieron ninguno de los casos anteriores entonces debimos obtener la palabra deseada
-
-	free(stringCopyAddress);
-	return word;
-}
-
-
-/*
- * Function:  writeFull
- * --------------------
- *  Escribe lo que le sobra a token dentro de dst
- *
- *  token: String original
- *
- *  dst: String destino
- *
- *  returns: void
- */
-void writeFull(char *token, char dst[])
-{
-    char tmp[MSG_LEN] = "";
-
-    while (token != NULL)
-    {
-        strcat(tmp, token);
-        strcat(tmp, " ");
-        token = strtok(NULL, " ");
-    }
-
-    strcpy(dst, tmp);
-    dst[strlen(dst)-1] = 0;
-}

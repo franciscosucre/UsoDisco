@@ -12,30 +12,31 @@
 #define MESSAGES_H_
 
 #define MSG_LEN 500
+#define MENU_LEN 800
+#define ERROR_LEN 100
 #define BASIC_PERMISSIONS 0666
 #define N 20
 
 // CONSTANTES
+extern const char pthreadCreateError[ERROR_LEN];
+extern const char pthreadJoinError[ERROR_LEN];
+extern const char mkfifoError[ERROR_LEN];
+extern const char selectError[ERROR_LEN];
+extern const char openError[ERROR_LEN];
+extern const char openDirError[ERROR_LEN];
+extern const char getcwdError[ERROR_LEN];
+extern const char mallocError[ERROR_LEN];
+extern const char rvError[ERROR_LEN];
+extern const char argNumError[ERROR_LEN];
+extern const char dirNotExistsError[ERROR_LEN];
+extern const char argOrdError[ERROR_LEN];
+extern const char invOrdError[ERROR_LEN];
 
-extern const char *mkfifoError;
-extern const char *selectError;
-extern const char *openError;
-extern const char *getcwdError;
-extern const char *mallocError;
-extern const char *rvError;
-extern const char *argNumError;
-extern const char *dirNotExistsError;
-extern const char *argOrdError;
-extern const char *invOrdError;
-
-extern const char *helpMenu;
+extern const char helpMenu[MENU_LEN];
 
 
 // FUNCIONES
 
-char* getErrorMessage(const char* errorMessage,int line, char* file);
-char* getWord(char* string,char* delimeter,int index);
-void writeFull(char *token, char dst[]);
 void errorAndExit(const char* errorMessage);
 
 

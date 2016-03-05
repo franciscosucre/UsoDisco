@@ -143,8 +143,7 @@ int main(int argc, char *argv[])
 		/* Caso 1.2: Se recibio el argumento incorrecto */
 		else
 		{
-			printf("%s\n", invOrdError);
-			exit(0);
+			errorAndExit(invOrdError);
 		}
 	}
 
@@ -168,8 +167,7 @@ int main(int argc, char *argv[])
 
 				if (directorioTemp == NULL)
 				{
-					printf("%s\n",dirNotExistsError);
-					exit(-1);
+					errorAndExit(dirNotExistsError);
 				}
         		dirSwitch = 1;
         		closedir(directorioTemp);
@@ -184,8 +182,7 @@ int main(int argc, char *argv[])
         	/* Caso 2.4: Se recibieron argumentos en un formato invalido */
     		else
     		{
-    			printf("%s\n", invOrdError);
-    			exit(0);
+    			errorAndExit(invOrdError);
     		}
         }
 
@@ -259,8 +256,7 @@ int main(int argc, char *argv[])
 					rc = pthread_join(hilos[j], &status);
 					if (rc)
 					{
-						printf("ERROR; return code from pthread_join() is %d\n", rc);
-						exit(-1);
+						errorAndExit(pthreadJoinError);
 					}
 					/* Obtenemos la cuenta calculada por el hilo y se la sumamos a la global */
 					pthread_mutex_lock(&numTotalBlocksLock);
@@ -319,8 +315,7 @@ int main(int argc, char *argv[])
 					rc = pthread_create(&hilos[i], NULL, examinarDirectorio, (void *) &thread_data_array[i]);
 					if (rc)
 					{
-						printf("ERROR; return code from pthread_create() is %d\n", rc);
-						exit(-1);
+						errorAndExit(pthreadCreateError);
 					}
 				}
 				else
@@ -366,8 +361,7 @@ int main(int argc, char *argv[])
 					rc = pthread_join(hilos[j], &status);
 					if (rc)
 					{
-						printf("ERROR; return code from pthread_join() is %d\n", rc);
-						exit(-1);
+						errorAndExit(pthreadJoinError);
 					}
 					/* Obtenemos la cuenta calculada por el hilo y se la sumamos a la global */
 					pthread_mutex_lock(&numTotalBlocksLock);
@@ -456,7 +450,7 @@ void *examinarDirectorio(void *threadarg)
 	/* Si no se pudo abrir el directorio la funcion devuelve error */
 	if (directorioTemp == NULL)
 	{
-		printf("opendir\n");
+		printf("%s\n",openDirError);
 		return (void *) -1;
 	}
 
