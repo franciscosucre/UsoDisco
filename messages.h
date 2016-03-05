@@ -1,5 +1,8 @@
 /*
- * commons.h
+ * messages.h
+ *
+ *	Archivo en el cual se encuentran los mensajes de error y funciones utilizadas
+ *	para su manejo
  *
  *  Created on: Jan 30, 2016
  *      Author: francisco
@@ -24,34 +27,8 @@ extern const char *argNumError;
 extern const char *dirNotExistsError;
 extern const char *argOrdError;
 extern const char *invOrdError;
-extern const char *termSizeError;
-extern const char *writeToMySelf;
 
-extern const char *LogOutMessage;
-extern const char *LogOutServerMessage;
-extern const char *noUserSelectedMessage;
-extern const char *successMessage;
-extern const char *welcomeMessage;
-extern const char *serverStartMessage;
-extern const char *defaultStatus;
-extern const char *defaultServer;
-extern const char *defaultUsername;
-extern const char *loginResultMessage;
 extern const char *helpMenu;
-
-
-// Ordenes Cliente->Servidor
-
-extern const char *ordenQuien;
-extern const char *ordenEscribir;
-extern const char *ordenEstoy;
-extern const char *ordenSalir;
-extern const char *ordenAyuda;
-extern const char *ordenInvalida;
-extern const char *ordenCambiarConversacion;
-
-extern const char *userNotFoundMessage;
-extern const char *userNameNotAvaible;
 
 
 // FUNCIONES

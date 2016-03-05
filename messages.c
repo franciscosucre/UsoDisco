@@ -1,8 +1,8 @@
 /*
- * commons.c
+ * 	messages.c
  *
- *	Contiene los mensajes que se utilizan en el programa y ademas funciones comunes para el cliente
- *	y el servidor
+ *	Archivo en el cual se encuentran los mensajes de error y funciones utilizadas
+ *	para su manejo
  *
  *  Created on: Jan 20, 2016
  *      Author: francisco y midaysa
@@ -30,20 +30,10 @@ const char *dirNotExistsError = "El Directorio deseado no existe";
 const char *argNumError = "Numero Incorrecto de Argumentos";
 const char *argOrdError = "Orden Incorrecto de Argumentos";
 const char *invOrdError = "Argumentos Invalidos";
-const char *termSizeError = "El terminal es muy pequeno para correr este programa.\n";
-const char *rvError = "rvError ";
-const char *writeToMySelf = "No puedes escribir mensajes para ti mismo";
 
 
 // Mensajes de sistema
 
-const char *LogOutMessage = "Cerrando Sesion... Thank You For Using Our Chat Services!";
-const char *LogOutServerMessage = " ha cerrado sesion!";
-const char *noUserSelectedMessage = "No le esta escribiendo a ningun usuario!\n";
-const char *defaultStatus = "Sin Status";
-const char *defaultServer = "/tmp/servidor";
-const char *defaultUsername = "System";
-const char *loginResultMessage = "Resultado Del Inicio De Sesion:";
 const char *helpMenu = "\n"
 		"Sintaxis\n"
 		"\n"
@@ -60,20 +50,6 @@ const char *helpMenu = "\n"
 		"\n";
 
 // Ordenes Cliente->Servidor
-
-const char *ordenQuien = "-quien";
-const char *ordenEscribir = "-escribir";
-const char *ordenEstoy = "-estoy";
-const char *ordenSalir = "-salir";
-const char *ordenAyuda = "-ayuda";
-const char *ordenCambiarConversacion = "-cambiarConversacion";
-const char *ordenInvalida = "Orden Invalida";
-
-const char *serverStartMessage = "Iniciando servidor!\n";
-const char *welcomeMessage = "--------- Mega Servicio De Chat! Bienvenido! ---------\n \n";
-const char *successMessage = "Operacion Exitosa";
-const char *userNotFoundMessage = "El usuario al que quiere escribirle no se encuentra conectado";
-const char *userNameNotAvaible = "El nombre de usuario no se encuentra disponible, por favor escoja otro";
 
 /*
  * Function:  errorAndExit
