@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+					pthread_mutex_unlock(&hilosEstadosBlocksLock);
 				}
 				i =+ 1;
 				if (i == nivelConcurrencia)
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 					sizePilaHilo = stackSize(&pilaDirectoriosHilo[j]);
 					for(z=0; z<sizePilaHilo; z++)
 					{
-						popFromStack(&pilaDirectoriosHilo[z],directorioNuevo);
+						popFromStack(&pilaDirectoriosHilo[j],directorioNuevo);
 						pthread_mutex_lock(&pilaDirectoriosBlocksLock);
 						pushToStack(&pilaDirectorios,directorioNuevo);
 						pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
