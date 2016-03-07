@@ -30,7 +30,7 @@
 
 
 #define MSG_LEN 500             // Longitud Maxima de los strings (Mensajes, directorios, etc)
-#define MAXDIR 80				// Maximo numero de directorios en la pila
+#define MAXDIR 170				// Maximo numero de directorios en la pila
 #define MAXTHREADS 20			// Maximo numero de hilos
 #define DEFAULT_CONCURRENCY 1	// Numero de hilos por defecto
 #define DEFAULT_FILE stdout		// Salida por defecto
