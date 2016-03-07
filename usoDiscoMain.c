@@ -446,6 +446,9 @@ void *examinarDirectorio(void *threadarg)
 		sprintf(dataHilo->directory,"%s/",dataHilo->directory);
 	}
 
+	/* Para DEBUG */
+	//fprintf(archivoSalida,"Hilo: %d --> %s\n",dataHilo->thread_id,dataHilo->directory);
+
 	/* Abrimos el directorio */
 	directorioTemp = opendir(dataHilo->directory );
 
@@ -482,7 +485,6 @@ void *examinarDirectorio(void *threadarg)
 				if (strcmp(dp->d_name,".") != 0 && strcmp(dp->d_name,"..") != 0)
 				{
 					/* Empilamos el nuevo  directorio en nuestra pila */
-					//fprintf(archivoSalida,"Directorio Completo: %s/%s\n",dataHilo->directory,dp->d_name);
 					pushToStack(&pilaDirectoriosHilo[dataHilo->thread_id],directorioNuevo);
 				}
 				else if (strcmp(dp->d_name,".") == 0)
