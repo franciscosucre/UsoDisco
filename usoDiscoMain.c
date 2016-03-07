@@ -31,7 +31,7 @@
 
 #define MSG_LEN 500             // NOTA: VER EN CUANTO SE DEJARA ESTE ARREGLO
 #define NAME_LEN 50
-#define MAXDIR 40
+#define MAXDIR 80
 #define DEFAULT_CONCURRENCY 1
 #define DEFAULT_FILE "stdout"
 
@@ -225,6 +225,8 @@ int main(int argc, char *argv[])
 		trabajando = hilosTrabajando();
 		/* Verificamos si hay hilos que se encuentran esperando actualmente */
 		esperando = hilosEsperando();
+		/* Verificamos si hay hilos que se encuentran libres actualmente */
+		libres = hiloslibres();
 
 		/* Si no hay hilos trabajando y no hay directorios para examinar
 		 * entonces el programa termina
@@ -259,18 +261,20 @@ int main(int argc, char *argv[])
 						errorAndExit(pthreadJoinError);
 					}
 					/* Obtenemos la cuenta calculada por el hilo y se la sumamos a la global */
-					pthread_mutex_lock(&numTotalBlocksLock);
 					numTotalBlocks += bloquesHilos[j];
-					pthread_mutex_unlock(&numTotalBlocksLock);
 					/* Calculamos el tamano de la pila que retorno el hilo */
 					sizePilaHilo = stackSize(&pilaDirectoriosHilo[j]);
 					/* Extraemos los directorios nuevos del hilo y los agregamos a la pila global */
 					for(z=0; z<sizePilaHilo; z++)
 					{
 						popFromStack(&pilaDirectoriosHilo[j],directorioNuevo);
-						pthread_mutex_lock(&pilaDirectoriosBlocksLock);
-						pushToStack(&pilaDirectorios,directorioNuevo);
-						pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+						if (strcmp(directorioNuevo,"") != 0)
+						{
+							pthread_mutex_lock(&pilaDirectoriosBlocksLock);
+							pushToStack(&pilaDirectorios,directorioNuevo);
+							pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+						}
+
 					}
 					/* Marcamos el hilo como libre */
 					liberarHilo(j);
@@ -283,15 +287,10 @@ int main(int argc, char *argv[])
 			}
 
 		}
-		/* Calculamos el tamano actual de la pila de directorios global */
-		pthread_mutex_lock(&pilaDirectoriosBlocksLock);
-		size = stackSize(&pilaDirectorios);
-		pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
-		/* Verificamos si hay hilos que se encuentran libres actualmente */
-		libres = hiloslibres();
 		/* Si hay hilos libres y directorios pendientes asignamos todos los que podemos */
 		if (size>0 && libres > 0)
 		{
+			i = 0;
 			/* Mientras hayan elementos en la pila seguire asignando hilos libres */
 			while (size>0)
 			{
@@ -305,6 +304,7 @@ int main(int argc, char *argv[])
 					pthread_mutex_lock(&pilaDirectoriosBlocksLock);
 					popFromStack(&pilaDirectorios,thread_data_array[i].directory);
 					pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+					size = size -1;
 
 					/* Defino el id del hilo */
 					thread_data_array[i].thread_id = i;
@@ -322,21 +322,19 @@ int main(int argc, char *argv[])
 				{
 					pthread_mutex_unlock(&hilosEstadosBlocksLock);
 				}
+				/* Seguimos iterando */
+				i = i + 1;
+				/* Si llegamos al final de la lista iniciamos nuevamente */
+				if (i >= nivelConcurrencia)
+				{
+					i = 0;
+				}
 				/* Verificamos si hay hilos que se encuentran libres actualmente */
 				libres = hiloslibres();
-				/* Si no hay hilos libres, salimos del ciclo */
 				if (libres == 0)
 				{
 					break;
 				}
-				/* Seguimos iterando */
-				i =+ 1;
-				/* Si llegamos al final de la lista iniciamos nuevamente */
-				if (i == nivelConcurrencia)
-				{
-					i = 0;
-				}
-				break;
 			}
 		}
 		/* Calculamos el tamano actual de la pila de directorios global */
@@ -363,6 +361,7 @@ int main(int argc, char *argv[])
 					{
 						errorAndExit(pthreadJoinError);
 					}
+
 					/* Obtenemos la cuenta calculada por el hilo y se la sumamos a la global */
 					pthread_mutex_lock(&numTotalBlocksLock);
 					numTotalBlocks += bloquesHilos[j];
@@ -373,9 +372,13 @@ int main(int argc, char *argv[])
 					for(z=0; z<sizePilaHilo; z++)
 					{
 						popFromStack(&pilaDirectoriosHilo[j],directorioNuevo);
-						pthread_mutex_lock(&pilaDirectoriosBlocksLock);
-						pushToStack(&pilaDirectorios,directorioNuevo);
-						pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+						if (strcmp(directorioNuevo,"") != 0)
+						{
+							pthread_mutex_lock(&pilaDirectoriosBlocksLock);
+							pushToStack(&pilaDirectorios,directorioNuevo);
+							pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
+						}
+
 					}
 					/* Marcamos el hilo como libre */
 					liberarHilo(j);
@@ -453,6 +456,8 @@ void *examinarDirectorio(void *threadarg)
 		printf("%s\n",openDirError);
 		return (void *) -1;
 	}
+
+	printf("Hilo %d, Directorio: %s\n",dataHilo->thread_id,dataHilo->directory);
 
 	/* Iteramos entre los archivos del directorio */
 	for (dp = readdir(directorioTemp); dp != NULL; dp = readdir(directorioTemp))
@@ -692,28 +697,16 @@ int  stackSize(struct directoryStack* stack)
 	int i;
 	int returnValue;
 
-	/* Caso 1: La primera posicion esta vacia, por lo que la pila
-	 * esta vacia
-	 */
-	if (strcmp(stack->listaDirectorios[0],"") == 0)
+	/* Iteramos en la pila */
+	for (i = 0; i < MAXDIR; i++)
 	{
-		returnValue = 0;
-	}
-	/* Caso 2: Hay posiciones no vacias
-	 */
-	else
-	{
-		/* Iteramos en la pila */
-		for (i = 1; i < MAXDIR; i++)
+		/* Cuando conseguimos un string vacio sabemos que hemos llegado al
+		 * final de la pila
+		 */
+		if (strcmp(stack->listaDirectorios[i],"") == 0)
 		{
-			/* Cuando conseguimos un string vacio sabemos que hemos llegado al
-			 * final de la pila
-			 */
-			if (strcmp(stack->listaDirectorios[i],"") == 0)
-			{
-				returnValue = i;
-				break;
-			}
+			returnValue = i;
+			break;
 		}
 	}
 	return returnValue;
