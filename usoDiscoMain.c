@@ -457,7 +457,6 @@ void *examinarDirectorio(void *threadarg)
 	}
 
 	/* Utilizado para DEBUG */
-	//printf("Hilo %d, Directorio: %s\n",dataHilo->thread_id,dataHilo->directory);
 
 	/* Iteramos entre los archivos del directorio */
 	for (dp = readdir(directorioTemp); dp != NULL; dp = readdir(directorioTemp))
@@ -486,18 +485,23 @@ void *examinarDirectorio(void *threadarg)
 					//fprintf(archivoSalida,"Directorio Completo: %s/%s\n",dataHilo->directory,dp->d_name);
 					pushToStack(&pilaDirectoriosHilo[dataHilo->thread_id],directorioNuevo);
 				}
+				else if (strcmp(dp->d_name,".") == 0)
+				{
+					/* Agregamos a la cuenta total el tamano del archivo */
+					bloquesHilos[dataHilo->thread_id] += bufferDeArchivo.st_blocks;
+				}
 			}
 			/* Caso 2.2: El archivo es un Archvo Regular o Fichero */
 			else
 			{
-				/* Enviamos al archivo de salida el numero de bloques de archivo y su direccion */
-				fprintf(archivoSalida,"(%ld)	%s\n", bufferDeArchivo.st_blocks,directorioNuevo);
 				/* Agregamos a la cuenta total el tamano del archivo */
 				bloquesHilos[dataHilo->thread_id] += bufferDeArchivo.st_blocks;
 			}
 		}
 	}
 
+	/* Enviamos al archivo de salida el numero de bloques de archivo y su direccion */
+	fprintf(archivoSalida,"(%d)	%s\n", bloquesHilos[dataHilo->thread_id],dataHilo->directory);
 	/* Cierro el directorio */
 	closedir(directorioTemp);
 	/* Marco el hilo como esperando */
