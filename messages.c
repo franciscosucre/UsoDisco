@@ -19,9 +19,9 @@
 #define BASIC_PERMISSIONS 0666
 #define MSG_LEN 500
 #define MENU_LEN 800
-#define ERROR_LEN 100
+#define ERROR_LEN 160
 
-// Mensajes de error
+/* Mensajes de error */
 
 const char pthreadCreateError[ERROR_LEN] = "pthreadCreateError";
 const char pthreadJoinError[ERROR_LEN] = "pthreadJoinError";
@@ -35,9 +35,13 @@ const char dirNotExistsError[ERROR_LEN] = "El Directorio deseado no existe";
 const char argNumError[ERROR_LEN] = "Numero Incorrecto de Argumentos";
 const char argOrdError[ERROR_LEN] = "Orden Incorrecto de Argumentos";
 const char invOrdError[ERROR_LEN] = "Argumentos Invalidos";
+const char maxDirError[ERROR_LEN] = "La pila de directorios ha llegado a su capacidad maxima, por favor aumente"
+		" el valor de MAXDIR al inicio del de usoDiscoMain.c para poder continuar";
+const char maxThreadError[ERROR_LEN] = "Ha elegido mas de la capacidad maxima de Threads para el programa, por favor"
+		" aumente el valor de MAXTHREADS al inicio del de usoDiscoMain.c para poder continuar";
 
 
-// Mensajes de sistema
+/* Mensajes de sistema */
 
 const char helpMenu[MENU_LEN] = "\n"
 		"Sintaxis\n"
@@ -53,8 +57,6 @@ const char helpMenu[MENU_LEN] = "\n"
 		"-o salida: archivo que contendrá la salida con la lista de directorios y el espacio en "
 		"bloques ocupado por los archivos regulares. El valor por defecto es la salida estándar\n"
 		"\n";
-
-// Ordenes Cliente->Servidor
 
 /*
  * Function:  errorAndExit

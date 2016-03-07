@@ -29,11 +29,12 @@
 #include <time.h>				// Clock
 
 
-#define MSG_LEN 500             // NOTA: VER EN CUANTO SE DEJARA ESTE ARREGLO
-#define NAME_LEN 50
-#define MAXDIR 80
-#define DEFAULT_CONCURRENCY 1
-#define DEFAULT_FILE "stdout"
+#define MSG_LEN 500             // Longitud Maxima de los strings (Mensajes, directorios, etc)
+#define MAXDIR 80				// Maximo numero de directorios en la pila
+#define MAXTHREADS 20			// Maximo numero de hilos
+#define DEFAULT_CONCURRENCY 1	// Numero de hilos por defecto
+#define DEFAULT_FILE stdout		// Salida por defecto
+#define DEFAULT_DIR "."			// Directorio por defecto
 
 /* Pila de directorios */
 struct directoryStack
@@ -61,16 +62,16 @@ pthread_mutex_t pilaDirectoriosBlocksLock;			// Mutex para asegurar la exclusivi
 													// global de directorios
 int numTotalBlocks;									// Variable global para la cuenta de bloques
 struct directoryStack pilaDirectorios;				// Pila Global de directorios
-int hilosEstado[MAXDIR];							// Lista de estado de los hilos, indican si estan libres o
+int hilosEstado[MAXTHREADS];							// Lista de estado de los hilos, indican si estan libres o
 													// trabajando
 clock_t start, end;									// Variables para contar el tiempo de ejecucion del programa
 double cpu_time_used;								// Variables para contar el tiempo de ejecucion
-struct thread_data thread_data_array[MAXDIR];		// Variable que guarda los argumentos a ser utilizados por los hilos
+struct thread_data thread_data_array[MAXTHREADS];		// Variable que guarda los argumentos a ser utilizados por los hilos
 int nivelConcurrencia;								// Numero de hilos a crear
 
 struct directoryStack pilaDirectoriosHilo[MAXDIR];	// Arreglo de pilas de directorio en las que los hilos guardaran
 													// los directorios que encuentren
-int bloquesHilos[MAXDIR];							// Arreglo de enteros en el que los hilos guardaran sus cuentas
+int bloquesHilos[MAXTHREADS];							// Arreglo de enteros en el que los hilos guardaran sus cuentas
 													// de bloques
 
 /* ---------------FUNCIONES--------------- */
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
 											// de los ficheros o directorios
 	int exists;								// Variable que indica si un directorio existe
 	int bloquesTotal;						// Numero de bloques en total
-	pthread_t hilos[MAXDIR];				// Lista de hilos
+	pthread_t hilos[MAXTHREADS];				// Lista de hilos
 
 	int sizePilaHilo;						// Variable auxiliar para guardar el tamano de una pila retornada
 											// por un hilo
@@ -127,9 +128,8 @@ int main(int argc, char *argv[])
 
 	/* Se asignan los valores por defectos */
 	nivelConcurrencia = DEFAULT_CONCURRENCY;
-	strcpy(archivoSalidaNombre,DEFAULT_FILE);
-	archivoSalida = stdout;
-	strcpy(directorioInicial,".");
+	archivoSalida = DEFAULT_FILE;
+	strcpy(directorioInicial,DEFAULT_DIR);
 
 	/* Caso 1: Se recibio 1 solo argumento */
 	if (argc == 2)
@@ -157,6 +157,11 @@ int main(int argc, char *argv[])
         	if ((strcmp(argv[i],"-n")) == 0 && levelSwitch == 0)
 			{
         		nivelConcurrencia = atoi(argv[i + 1]);
+        		if (nivelConcurrencia >= MAXTHREADS)
+        		{
+        			printf("%s\n\n",maxThreadError);
+        			exit(-1);
+        		}
         		levelSwitch = 1;
 			}
         	/* Caso 2.2: Se recibio el argumento del numero de concurrencia */
@@ -236,13 +241,6 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		/* Calculamos el tamano actual de la pila de directorios global */
-		pthread_mutex_lock(&pilaDirectoriosBlocksLock);
-		size = stackSize(&pilaDirectorios);
-		pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
-		/* Verificamos si hay hilos que se encuentran esperando actualmente */
-		esperando = hilosEsperando();
-
 		/* si hay hilos esperando recibimos sus respuestas */
 		if (esperando > 0)
 		{
@@ -283,9 +281,7 @@ int main(int argc, char *argv[])
 				{
 					pthread_mutex_unlock(&hilosEstadosBlocksLock);
 				}
-
 			}
-
 		}
 		/* Si hay hilos libres y directorios pendientes asignamos todos los que podemos */
 		if (size>0 && libres > 0)
@@ -317,6 +313,11 @@ int main(int argc, char *argv[])
 					{
 						errorAndExit(pthreadCreateError);
 					}
+					/* Si existe un error en el pipe salimos del programa */
+					else if (status)
+					{
+						exit(-1);
+					}
 				}
 				else
 				{
@@ -337,12 +338,6 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-		/* Calculamos el tamano actual de la pila de directorios global */
-		pthread_mutex_lock(&pilaDirectoriosBlocksLock);
-		size = stackSize(&pilaDirectorios);
-		pthread_mutex_unlock(&pilaDirectoriosBlocksLock);
-		/* Verificamos si hay hilos que se encuentran trabajando actualmente */
-		trabajando = hilosTrabajando();
 
 		/* Si la cola esta vacia pero hay hilos trabajando esperamos que traigan informacion de vuelta */
 		if ((size==0) && (trabajando > 0))
@@ -361,7 +356,11 @@ int main(int argc, char *argv[])
 					{
 						errorAndExit(pthreadJoinError);
 					}
-
+					/* Si existe un error en el pipe salimos del programa */
+					else if (status)
+					{
+						exit(-1);
+					}
 					/* Obtenemos la cuenta calculada por el hilo y se la sumamos a la global */
 					pthread_mutex_lock(&numTotalBlocksLock);
 					numTotalBlocks += bloquesHilos[j];
@@ -457,7 +456,8 @@ void *examinarDirectorio(void *threadarg)
 		return (void *) -1;
 	}
 
-	printf("Hilo %d, Directorio: %s\n",dataHilo->thread_id,dataHilo->directory);
+	/* Utilizado para DEBUG */
+	//printf("Hilo %d, Directorio: %s\n",dataHilo->thread_id,dataHilo->directory);
 
 	/* Iteramos entre los archivos del directorio */
 	for (dp = readdir(directorioTemp); dp != NULL; dp = readdir(directorioTemp))
@@ -734,6 +734,12 @@ void pushToStack(struct directoryStack* stack,char directorioNuevo[MSG_LEN])
 	 * esta el ultimo directorio de la pila
 	 */
 	lastPosition = stackSize(stack);
+
+	if(lastPosition >= MAXDIR - 1)
+	{
+		printf("%s\n",maxDirError);
+		exit(-1);
+	}
 
 	strcpy(stack->listaDirectorios[lastPosition],directorioNuevo);
 

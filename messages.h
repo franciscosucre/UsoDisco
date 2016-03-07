@@ -17,7 +17,7 @@
 #define BASIC_PERMISSIONS 0666
 #define N 20
 
-// CONSTANTES
+/* CONSTANTES */
 extern const char pthreadCreateError[ERROR_LEN];
 extern const char pthreadJoinError[ERROR_LEN];
 extern const char mkfifoError[ERROR_LEN];
@@ -31,11 +31,13 @@ extern const char argNumError[ERROR_LEN];
 extern const char dirNotExistsError[ERROR_LEN];
 extern const char argOrdError[ERROR_LEN];
 extern const char invOrdError[ERROR_LEN];
+extern const char maxDirError[ERROR_LEN];
+extern const char maxThreadError[ERROR_LEN];
 
 extern const char helpMenu[MENU_LEN];
 
 
-// FUNCIONES
+/* FUNCIONES */
 
 void errorAndExit(const char* errorMessage);
 
