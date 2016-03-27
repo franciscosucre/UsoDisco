@@ -397,8 +397,8 @@ int main(int argc, char *argv[])
 	cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
 	fprintf(archivoSalida,"numTotalBlocks = %d\n",numTotalBlocks);
-
-	fprintf(archivoSalida,"\ncpu_time_used = %f\n",cpu_time_used);
+	// Print para medir el tiempo
+	//fprintf(archivoSalida,"\ncpu_time_used = %f\n",cpu_time_used);
 
 	if (archivoSalida != NULL)
 	{
