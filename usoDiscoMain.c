@@ -26,7 +26,6 @@
 #include <dirent.h>				// dirent
 #include <sys/types.h>			// types
 #include <sys/stat.h>			// Stats
-#include <time.h>				// Clock
 
 
 #define MSG_LEN 500             // Longitud Maxima de los strings (Mensajes, directorios, etc)
@@ -64,8 +63,6 @@ int numTotalBlocks;									// Variable global para la cuenta de bloques
 struct directoryStack pilaDirectorios;				// Pila Global de directorios
 int hilosEstado[MAXTHREADS];							// Lista de estado de los hilos, indican si estan libres o
 													// trabajando
-clock_t start, end;									// Variables para contar el tiempo de ejecucion del programa
-double cpu_time_used;								// Variables para contar el tiempo de ejecucion
 struct thread_data thread_data_array[MAXTHREADS];		// Variable que guarda los argumentos a ser utilizados por los hilos
 int nivelConcurrencia;								// Numero de hilos a crear
 
@@ -217,8 +214,6 @@ int main(int argc, char *argv[])
 	pthread_mutex_init(&pilaDirectoriosBlocksLock,NULL);
 
 	i = 0;
-
-	start = clock();
 
 	while (1)
 	{
@@ -392,9 +387,6 @@ int main(int argc, char *argv[])
 
 		}
 	}
-
-	end = clock();
-	cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
 	fprintf(archivoSalida,"numTotalBlocks = %d\n",numTotalBlocks);
 	// Print para medir el tiempo
