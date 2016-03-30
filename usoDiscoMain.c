@@ -187,11 +187,17 @@ int main(int argc, char *argv[])
     			errorAndExit(invOrdError);
     		}
         }
-
 	}
 
 	/* Caso 3: Se recibieron mas argumentos de los posibles */
 	else if (argc > 7)
+	{
+		printf("%s", argNumError);
+		exit(0);
+	}
+
+	/* Caso 4: Se recibio un numero incorrecto */
+	else
 	{
 		printf("%s", argNumError);
 		exit(0);
