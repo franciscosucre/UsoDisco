@@ -128,8 +128,14 @@ int main(int argc, char *argv[])
 	archivoSalida = DEFAULT_FILE;
 	strcpy(directorioInicial,DEFAULT_DIR);
 
+	/* Caso 0: Se recibio 0 argumentos */
+	if (argc == 1)
+	{
+
+	}
+
 	/* Caso 1: Se recibio 1 solo argumento */
-	if (argc == 2)
+	else if (argc == 2)
 	{
 		/* Caso 1.1: Se recibio el argumento correcto */
 		if ((strcmp(argv[1],"-h")) == 0)
